@@ -22,14 +22,14 @@ export default function App() {
         </h1>
       </header>
 
-      <main className="flex-1 px-4 pb-28 overflow-y-auto">
+      <main className="flex-1 px-4 pb-32 overflow-y-auto">
         {tab === 'rankings' && <Rankings />}
         {tab === 'results'  && <NewResult onSaved={() => setTab('rankings')} />}
         {tab === 'draw'     && <Draw />}
         {tab === 'options'  && <Options />}
       </main>
 
-      <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-lg bg-zinc-900 border-t border-zinc-800 flex">
+      <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-lg bg-zinc-900 border-t border-zinc-800 flex pb-[env(safe-area-inset-bottom)]">
         {TABS.map(t => (
           <button
             key={t.id}

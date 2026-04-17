@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db'
 
@@ -18,6 +18,7 @@ function ActivityCard({ activity, existingResult, players }) {
   const [rankings, setRankings] = useState(existingResult?.rankings ?? [])
   const [dragIndex, setDragIndex] = useState(null)
   const [saved, setSaved] = useState(false)
+  const touchRef = useRef(null)
 
   const unranked = players.filter(p => !rankings.includes(p.id))
 
@@ -34,10 +35,8 @@ function ActivityCard({ activity, existingResult, players }) {
     setRankings(prev => prev.filter(id => id !== playerId))
   }
 
-  function handleDragStart(index) {
-    setDragIndex(index)
-  }
-
+  // Desktop drag
+  function handleDragStart(index) { setDragIndex(index) }
   function handleDragOver(e, index) {
     e.preventDefault()
     if (dragIndex === null || dragIndex === index) return
@@ -47,9 +46,31 @@ function ActivityCard({ activity, existingResult, players }) {
     setRankings(next)
     setDragIndex(index)
   }
+  function handleDragEnd() { setDragIndex(null) }
 
-  function handleDragEnd() {
+  // Mobile touch drag
+  function handleTouchStart(e, index) {
+    touchRef.current = index
+    setDragIndex(index)
+  }
+  function handleTouchMove(e) {
+    e.preventDefault()
+    const touch = e.touches[0]
+    const el = document.elementFromPoint(touch.clientX, touch.clientY)
+    const item = el?.closest('[data-rank-index]')
+    if (!item) return
+    const targetIndex = parseInt(item.dataset.rankIndex)
+    if (isNaN(targetIndex) || targetIndex === touchRef.current) return
+    const next = [...rankings]
+    const [moved] = next.splice(touchRef.current, 1)
+    next.splice(targetIndex, 0, moved)
+    setRankings(next)
+    touchRef.current = targetIndex
+    setDragIndex(targetIndex)
+  }
+  function handleTouchEnd() {
     setDragIndex(null)
+    touchRef.current = null
   }
 
   async function save() {
@@ -86,10 +107,14 @@ function ActivityCard({ activity, existingResult, players }) {
               return (
                 <div
                   key={playerId}
+                  data-rank-index={index}
                   draggable
                   onDragStart={() => handleDragStart(index)}
                   onDragOver={e => handleDragOver(e, index)}
                   onDragEnd={handleDragEnd}
+                  onTouchStart={e => handleTouchStart(e, index)}
+                  onTouchMove={handleTouchMove}
+                  onTouchEnd={handleTouchEnd}
                   className={`flex items-center gap-3 bg-zinc-800 rounded-xl px-3 py-2.5 cursor-grab active:cursor-grabbing transition-opacity ${
                     dragIndex === index ? 'opacity-40' : 'opacity-100'
                   }`}
