@@ -16,7 +16,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-zinc-950 flex flex-col max-w-lg mx-auto">
-      <header className="px-4 pt-8 pb-4 border-b border-zinc-800">
+      <header className="px-4 pt-[max(2rem,env(safe-area-inset-top))] pb-4 border-b border-zinc-800">
         <h1 className="text-xl font-black text-white tracking-widest uppercase">
           {TABS.find(t => t.id === tab)?.title}
         </h1>
