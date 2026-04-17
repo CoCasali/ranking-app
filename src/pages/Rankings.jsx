@@ -27,6 +27,15 @@ export default function Rankings() {
   const activities = useLiveQuery(() => db.activities.toArray()) ?? []
   const points = getPoints()
 
+  function getPlayerBadges(playerId) {
+    return results.map(result => {
+      const rank = result.rankings.indexOf(playerId)
+      if (rank === -1) return null
+      const activity = activities.find(a => a.id === result.activityId)
+      return { emoji: activity?.emoji ?? '🎮', rank }
+    }).filter(Boolean)
+  }
+
   const standings = computeStandings(players, results, points)
 
   async function deleteResult(id) {
@@ -74,7 +83,16 @@ export default function Rankings() {
               }`}>{index + 1}</span>
               <div className="flex-1">
                 <p className="font-semibold text-white">{entry.player.name}</p>
-                <p className="text-xs text-slate-400">{entry.wins} victoire{entry.wins !== 1 ? 's' : ''}</p>
+                <div className="flex items-center gap-1 mt-1 flex-wrap">
+                  {getPlayerBadges(entry.player.id).map(({ emoji, rank }, i) => (
+                    <span key={i} className={`text-sm w-7 h-7 flex items-center justify-center rounded-lg ${
+                      rank === 0 ? 'bg-yellow-400/30 ring-1 ring-yellow-400' :
+                      rank === 1 ? 'bg-slate-400/20 ring-1 ring-slate-400' :
+                      rank === 2 ? 'bg-amber-700/20 ring-1 ring-amber-700' :
+                                   'bg-slate-700/40 ring-1 ring-slate-600'
+                    }`}>{emoji}</span>
+                  ))}
+                </div>
               </div>
               <span className="text-xl font-bold text-indigo-400">{entry.points} pts</span>
             </div>
@@ -93,7 +111,10 @@ export default function Rankings() {
             return (
               <div key={activity.id} className="bg-slate-800 rounded-xl p-4 space-y-3">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-bold text-white">{activity.name}</h3>
+                  <h3 className="font-bold text-white flex items-center gap-2">
+                    {activity.emoji && <span>{activity.emoji}</span>}
+                    {activity.name}
+                  </h3>
                   <button
                     onClick={() => deleteResult(result.id)}
                     className="text-slate-500 hover:text-red-400 text-sm transition-colors px-2 py-1"

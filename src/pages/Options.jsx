@@ -59,16 +59,20 @@ function PlayersSection() {
   )
 }
 
+const ACTIVITY_EMOJIS = ['🎯','🎲','🃏','♟️','🎮','🏓','🎳','🎰','🧩','🏆','⚽','🏀','🎾','🏐','🥊','🎱','🪀','🎪','🎨','🎭','🎬','🍺','🚴','🤺','🎻','🎸','🏊','🥋']
+
 function ActivitiesSection() {
   const [name, setName] = useState('')
+  const [emoji, setEmoji] = useState('🎯')
   const activities = useLiveQuery(() => db.activities.orderBy('name').toArray()) ?? []
 
   async function addActivity(e) {
     e.preventDefault()
     const trimmed = name.trim()
     if (!trimmed) return
-    await db.activities.add({ name: trimmed, createdAt: new Date() })
+    await db.activities.add({ name: trimmed, emoji, createdAt: new Date() })
     setName('')
+    setEmoji('🎯')
   }
 
   async function deleteActivity(id) {
@@ -77,25 +81,47 @@ function ActivitiesSection() {
 
   return (
     <Section title="Activités">
-      <form onSubmit={addActivity} className="flex gap-2">
-        <input
-          type="text"
-          value={name}
-          onChange={e => setName(e.target.value)}
-          placeholder="Nom de l'activité"
-          className="flex-1 bg-slate-800 rounded-xl px-4 py-3 text-white placeholder-slate-500 outline-none focus:ring-2 focus:ring-indigo-500"
-        />
-        <button
-          type="submit"
-          className="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-5 py-3 rounded-xl transition-colors"
-        >
-          +
-        </button>
+      <form onSubmit={addActivity} className="space-y-3">
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={name}
+            onChange={e => setName(e.target.value)}
+            placeholder="Nom de l'activité"
+            className="flex-1 bg-slate-800 rounded-xl px-4 py-3 text-white placeholder-slate-500 outline-none focus:ring-2 focus:ring-indigo-500"
+          />
+          <button
+            type="submit"
+            className="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-5 py-3 rounded-xl transition-colors"
+          >
+            +
+          </button>
+        </div>
+        <div className="bg-slate-800 rounded-xl p-3">
+          <p className="text-slate-500 text-xs mb-2">Icône de l'activité</p>
+          <div className="flex flex-wrap gap-2">
+            {ACTIVITY_EMOJIS.map(e => (
+              <button
+                key={e}
+                type="button"
+                onClick={() => setEmoji(e)}
+                className={`text-xl w-9 h-9 rounded-lg flex items-center justify-center transition-colors ${
+                  emoji === e ? 'bg-indigo-600' : 'bg-slate-700 hover:bg-slate-600'
+                }`}
+              >
+                {e}
+              </button>
+            ))}
+          </div>
+        </div>
       </form>
       <div className="space-y-2">
         {activities.map(activity => (
           <div key={activity.id} className="flex items-center justify-between bg-slate-800 rounded-xl px-4 py-3">
-            <span className="text-white font-medium">{activity.name}</span>
+            <div className="flex items-center gap-3">
+              <span className="text-xl">{activity.emoji ?? '🎮'}</span>
+              <span className="text-white font-medium">{activity.name}</span>
+            </div>
             <button onClick={() => deleteActivity(activity.id)} className="text-slate-500 hover:text-red-400 text-xl transition-colors">×</button>
           </div>
         ))}
