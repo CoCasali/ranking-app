@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db'
 
@@ -18,8 +18,6 @@ function ActivityCard({ activity, existingResult, players }) {
   const [rankings, setRankings] = useState(existingResult?.rankings ?? [])
   const [dragIndex, setDragIndex] = useState(null)
   const [saved, setSaved] = useState(false)
-  const touchRef = useRef(null)
-
   const unranked = players.filter(p => !rankings.includes(p.id))
 
   function toggle() {
@@ -35,42 +33,18 @@ function ActivityCard({ activity, existingResult, players }) {
     setRankings(prev => prev.filter(id => id !== playerId))
   }
 
-  // Desktop drag
-  function handleDragStart(index) { setDragIndex(index) }
-  function handleDragOver(e, index) {
-    e.preventDefault()
-    if (dragIndex === null || dragIndex === index) return
+  function moveUp(index) {
+    if (index === 0) return
     const next = [...rankings]
-    const [moved] = next.splice(dragIndex, 1)
-    next.splice(index, 0, moved)
+    ;[next[index - 1], next[index]] = [next[index], next[index - 1]]
     setRankings(next)
-    setDragIndex(index)
   }
-  function handleDragEnd() { setDragIndex(null) }
 
-  // Mobile touch drag
-  function handleTouchStart(e, index) {
-    touchRef.current = index
-    setDragIndex(index)
-  }
-  function handleTouchMove(e) {
-    e.preventDefault()
-    const touch = e.touches[0]
-    const el = document.elementFromPoint(touch.clientX, touch.clientY)
-    const item = el?.closest('[data-rank-index]')
-    if (!item) return
-    const targetIndex = parseInt(item.dataset.rankIndex)
-    if (isNaN(targetIndex) || targetIndex === touchRef.current) return
+  function moveDown(index) {
+    if (index === rankings.length - 1) return
     const next = [...rankings]
-    const [moved] = next.splice(touchRef.current, 1)
-    next.splice(targetIndex, 0, moved)
+    ;[next[index], next[index + 1]] = [next[index + 1], next[index]]
     setRankings(next)
-    touchRef.current = targetIndex
-    setDragIndex(targetIndex)
-  }
-  function handleTouchEnd() {
-    setDragIndex(null)
-    touchRef.current = null
   }
 
   async function save() {
@@ -107,19 +81,8 @@ function ActivityCard({ activity, existingResult, players }) {
               return (
                 <div
                   key={playerId}
-                  data-rank-index={index}
-                  draggable
-                  onDragStart={() => handleDragStart(index)}
-                  onDragOver={e => handleDragOver(e, index)}
-                  onDragEnd={handleDragEnd}
-                  onTouchStart={e => handleTouchStart(e, index)}
-                  onTouchMove={handleTouchMove}
-                  onTouchEnd={handleTouchEnd}
-                  className={`flex items-center gap-3 bg-zinc-800 rounded-xl px-3 py-2.5 cursor-grab active:cursor-grabbing transition-opacity ${
-                    dragIndex === index ? 'opacity-40' : 'opacity-100'
-                  }`}
+                  className="flex items-center gap-3 bg-zinc-800 rounded-xl px-3 py-2.5"
                 >
-                  <span className="text-zinc-600 select-none text-sm">⠿</span>
                   <div className={`w-7 h-7 rounded-md flex items-center justify-center font-black text-xs flex-shrink-0 ${
                     index === 0 ? 'bg-amber-400 text-zinc-950' :
                     index === 1 ? 'bg-zinc-600 text-zinc-200' :
@@ -129,6 +92,10 @@ function ActivityCard({ activity, existingResult, players }) {
                     {index < 3 ? ROMAN[index] : index + 1}
                   </div>
                   <span className="flex-1 text-white font-bold uppercase tracking-wide text-sm">{player?.name}</span>
+                  <div className="flex flex-col gap-0.5">
+                    <button onClick={() => moveUp(index)} disabled={index === 0} className="text-zinc-500 hover:text-white disabled:opacity-20 leading-none px-1 transition-colors">▲</button>
+                    <button onClick={() => moveDown(index)} disabled={index === rankings.length - 1} className="text-zinc-500 hover:text-white disabled:opacity-20 leading-none px-1 transition-colors">▼</button>
+                  </div>
                   <button onClick={() => removeFromRanking(playerId)} className="text-zinc-600 hover:text-red-400 text-xl transition-colors">×</button>
                 </div>
               )
